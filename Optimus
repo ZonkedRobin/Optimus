@@ -1,0 +1,119 @@
+import ccxt
+import time
+import hmac
+import hashlib
+
+class Optimus:
+    def __init__(self, key, secret, passphrase, symbol):
+        self.key = key
+        self.secret = secret
+        self.passphrase = passphrase
+        self.symbol = symbol
+        self.exchange = ccxt.kucoinfutures({
+            '': self.key,
+            '': self.secret,
+            '': self.passphrase,
+            'options': {
+                'adjustForTimeDifference': True,
+                'version': 'v2'
+            }
+        })
+        self.long_margin = 0.5
+        self.short_margin = 0.5
+        self.optimus_profit_margin = 0
+        
+    def create_timestamp(self):
+        return str(time.time() * 1000)
+    
+    def create_signature(self, timestamp, method, request_path, body):
+        message = str(timestamp) + str(method) + str(request_path) + str(body)
+        return hmac.new(bytes(self.secret, 'latin1'), msg=bytes(message, 'latin1'), digestmod=hashlib.sha256).hexdigest().upper()
+    
+    def long_grid(self):
+        price = self.exchange.fetch_ticker(self.symbol)['last']
+        for i in range(200):
+            self.exchange.create_order(self.symbol, 'limit', 'buy', self.long_margin / 200, price * (1 + 0.01 * i))
+    
+    def short_grid(self):
+        price = self.exchange.fetch_ticker(self.symbol)['last']
+        for i in range(200):
+            self.exchange.create_order(self.symbol, 'limit', 'sell', self.short_margin / 200, price * (1 - 0.01 * i))
+    
+    def final_order(self, margin_type):
+        if margin_type == 'long':
+            self.exchange.create_order(self.symbol, 'limit', 'sell', self.long_margin * 0.75, self.buy_in_price * (1 + 0.2))
+            self.buy_in_price = self.exchange.fetch_ticker(self.symbol)['last']
+            self.long_margin *= 0.25
+            self.long_grid()
+        elif margin_type == 'short':
+            self.exchange.create_order(self.symbol, 'limit', 'buy', self.short_margin * 0.75, self.buy_in_price * (1 - 0.2))
+            self.buy_in_price = self.exchange.fetch_ticker(self.symbol)['last']
+            self.short_margin *= 0.25
+            self.short_grid()
+    
+    def redistribute_margins(self, margin_type):
+        if margin_type == 'long':
+            self.long_margin = self.initial_investment / 2
+self.create_grid(self.long_margin, 'long')
+if margin_type == 'short':
+
+    self.short_margin = self.initial_investment / 2
+self.create_grid(self.short_margin, 'short')
+if margin_type == 'optimus_profit':
+    self.optimus_profit_margin = self.total_profits / 2
+
+def create_grid(self, margin, margin_type):
+    buy_in_price = self.get_current_price()
+grid_size = 200
+grid_spacing = (buy_in_price * 0.2) / (grid_size + 1)
+stop_loss = buy_in_price * 0.9
+for i in range(grid_size):
+        order_price = buy_in_price + (i + 1) * grid_spacing
+        self.create_order(margin * 0.75 / grid_size, order_price, margin_type)
+
+        if order_price >= stop_loss:
+            self.redistribute_margins(margin_type)
+            break
+def create_order(self, size, price, margin_type):
+    if margin_type == 'long':
+        self.long_margin -= size
+# create long order
+if margin_type == 'short':
+        self.short_margin -= size
+# create short order
+elif margin_type == 'optimus_profit':
+    self.optimus_profit_margin -= size
+# exchange profits to USDC
+
+def get_current_price(self):
+# API call to get current BTC/USDT:USDT price
+    return current_price
+
+def exchange_profits(self):
+    usdt_profits = 0
+# calculate total profits in USDT
+usdc_profits = usdt_profits / 2
+self.optimus_profit_margin += usdc_profits
+self.total_profits -= usdt_profits
+
+def check_for_new_buy_in(self):
+    long_price = self.get_latest_order_price('long')
+short_price = self.get_latest_order_price('short')
+if long_price >= short_price:
+    self.redistribute_margins('long')
+else:
+    self.redistribute_margins('short')
+
+def get_latest_order_price(self, margin_type):
+# API call to get latest order price for given margin type
+    return latest_price
+
+def run_bot(self):
+    while True:
+        self.check_for_new_buy_in()
+self.exchange_profits()
+time.sleep(60)
+
+if name == 'main':
+    bot = Optimus(key, secret, p assphrase)
+bot.run_bot()
